@@ -14,3 +14,9 @@ public class OperatorDomainDto
     
     public DateTime CreateTime { get; set; }  
 }
+
+public class OperatorDomainListDto
+{
+    public long TotalRecordCount { get; set; }
+    public List<OperatorDomainDto> Data { get; set; }
+}
