@@ -21,7 +21,11 @@ public class PointsIndexerClientAutoMapperProfile : Profile
             .ForMember(t => t.SixSymbolAmount, m => m.MapFrom(f => f.SixSymbolAmount ?? "0"))
             .ForMember(t => t.SevenSymbolAmount, m => m.MapFrom(f => f.SevenSymbolAmount ?? "0"))
             .ForMember(t => t.EightSymbolAmount, m => m.MapFrom(f => f.EightSymbolAmount ?? "0"))
-            .ForMember(t => t.NineSymbolAmount, m => m.MapFrom(f => f.NineSymbolAmount ?? "0"));
+            .ForMember(t => t.NineSymbolAmount, m => m.MapFrom(f => f.NineSymbolAmount ?? "0"))
+            .ForMember(t => t.TenSymbolAmount, m => m.MapFrom(f => f.TenSymbolAmount ?? "0"))
+            .ForMember(t => t.ElevenSymbolAmount, m => m.MapFrom(f => f.ElevenSymbolAmount ?? "0"))
+            .ForMember(t => t.TwelveSymbolAmount, m => m.MapFrom(f => f.TwelveSymbolAmount ?? "0"))
+            ;
         CreateMap<AddressPointsSumByActionIndex, PointsSumByActionDto>();
         CreateMap<AddressPointsLogIndex, AddressPointsLogDto>();
         CreateMap<LogEventContext, OperatorUserIndex>().ReverseMap();
@@ -68,6 +72,9 @@ public class PointsIndexerClientAutoMapperProfile : Profile
             .ForMember(t => t.SevenSymbolAmount, m => m.MapFrom(f => f.SevenSymbolAmount ?? "0"))
             .ForMember(t => t.EightSymbolAmount, m => m.MapFrom(f => f.EightSymbolAmount ?? "0"))
             .ForMember(t => t.NineSymbolAmount, m => m.MapFrom(f => f.NineSymbolAmount ?? "0"))
+            .ForMember(t => t.TenSymbolAmount, m => m.MapFrom(f => f.TenSymbolAmount ?? "0"))
+            .ForMember(t => t.ElevenSymbolAmount, m => m.MapFrom(f => f.ElevenSymbolAmount ?? "0"))
+            .ForMember(t => t.TwelveSymbolAmount, m => m.MapFrom(f => f.TwelveSymbolAmount ?? "0"))
             ;
     }
 }

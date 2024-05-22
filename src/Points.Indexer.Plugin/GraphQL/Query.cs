@@ -6,6 +6,7 @@ using AElfIndexer.Grains.Grain.Client;
 using AElfIndexer.Grains.State.Client;
 using Points.Indexer.Plugin.Entities;
 using GraphQL;
+using Microsoft.IdentityModel.Tokens;
 using Nest;
 using Orleans;
 using Points.Indexer.Plugin.GraphQL.Dto;
@@ -15,7 +16,6 @@ namespace Points.Indexer.Plugin.GraphQL;
 
 public partial class Query
 {
-    
     [Name("syncState")]
     public static async Task<SyncStateDto> SyncStateAsync(
         [FromServices] IClusterClient clusterClient,
@@ -33,7 +33,7 @@ public partial class Query
             ConfirmedBlockHeight = confirmedHeight
         };
     }
-    
+
     [Name("operatorDomainInfo")]
     public static async Task<OperatorDomainDto> OperatorDomainInfo(
         [FromServices] IAElfIndexerClientEntityRepository<OperatorDomainIndex, LogEventInfo> repository,
@@ -47,20 +47,21 @@ public partial class Query
 
         return objectMapper.Map<OperatorDomainIndex, OperatorDomainDto>(domainIndex);
     }
-    
+
     [Name("checkDomainApplied")]
     public static async Task<DomainAppliedDto> CheckDomainApplied(
         [FromServices] IAElfIndexerClientEntityRepository<OperatorDomainIndex, LogEventInfo> repository,
         CheckDomainAppliedDto input)
     {
         if (input.DomainList.IsNullOrEmpty()) return new DomainAppliedDto();
-        
+
         var mustQuery = new List<Func<QueryContainerDescriptor<OperatorDomainIndex>, QueryContainer>>();
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.Domain)
             .Terms(input.DomainList)));
-        
+
         QueryContainer Filter(QueryContainerDescriptor<OperatorDomainIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
+
         var domainIndexList = await repository.GetListAsync(Filter);
 
         return new DomainAppliedDto()
@@ -76,9 +77,8 @@ public partial class Query
         [FromServices] IObjectMapper objectMapper,
         GetPointsSumBySymbolDto input)
     {
-
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
-        
+
         if (input.StartTime != DateTime.MinValue)
         {
             mustQuery.Add(q => q.DateRange(i =>
@@ -88,44 +88,51 @@ public partial class Query
 
         if (input.EndTime != DateTime.MinValue)
         {
-            mustQuery.Add(q => q.DateRange(i => 
+            mustQuery.Add(q => q.DateRange(i =>
                 i.Field(f => f.UpdateTime)
                     .LessThan(input.EndTime)));
+        }
+
+        if (!string.IsNullOrEmpty(input.DappName))
+        {
+            mustQuery.Add(q => q.Term(i =>
+                i.Field(f => f.DappId)
+                    .Value(input.DappName)));
         }
 
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumBySymbolIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
         var recordList = await repository.GetListAsync(Filter, skip: input.SkipCount, limit: input.MaxResultCount,
-            sortType: SortOrder.Ascending, sortExp: o => o.UpdateTime);
+            sortType: SortOrder.Ascending, sortExp: o => o.CreateTime);
 
-        var dataList = objectMapper.Map<List<AddressPointsSumBySymbolIndex>, List<PointsSumBySymbolDto>>(recordList.Item2);
+        var dataList =
+            objectMapper.Map<List<AddressPointsSumBySymbolIndex>, List<PointsSumBySymbolDto>>(recordList.Item2);
         return new PointsSumBySymbolDtoList
         {
             Data = dataList,
             TotalRecordCount = recordList.Item1
         };
     }
-    
+
     [Name("getPointsSumByAction")]
     public static async Task<PointsSumByActionDtoList> GetPointsSumByAction(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumByActionIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
         GetPointsSumByActionDto input)
     {
-
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
 
         if (input.DappId != "")
         {
             mustQuery.Add(q => q.Term(i => i.Field(f => f.DappId).Value(input.DappId)));
         }
-        
+
         if (input.Address != "")
         {
             mustQuery.Add(q => q.Term(i => i.Field(f => f.Address).Value(input.Address)));
         }
-        
+
         if (input.Domain != "")
         {
             mustQuery.Add(q => q.Term(i => i.Field(f => f.Domain).Value(input.Domain)));
@@ -134,31 +141,67 @@ public partial class Query
         if (input.Role != null)
         {
             mustQuery.Add(q => q.Term(i => i.Field(f => f.Role).Value(input.Role)));
-
         }
 
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumByActionIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
         var recordList = await repository.GetListAsync(Filter);
-        
-        var dataList = objectMapper.Map<List<AddressPointsSumByActionIndex>, List<PointsSumByActionDto>>(recordList.Item2);
+
+        var dataList =
+            objectMapper.Map<List<AddressPointsSumByActionIndex>, List<PointsSumByActionDto>>(recordList.Item2);
         return new PointsSumByActionDtoList
         {
             Data = dataList,
             TotalRecordCount = recordList.Item1
         };
     }
-    
+
+    [Name("getPointsRecordByName")]
+    public static async Task<PointsSumByActionDtoList> GetPointsRecordByName(
+        [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumByActionIndex, LogEventInfo> repository,
+        [FromServices] IObjectMapper objectMapper,
+        GetPointsRecordByNameDto input)
+    {
+        var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
+
+        if (input.DappId != "")
+        {
+            mustQuery.Add(q => q.Term(i => i.Field(f => f.DappId).Value(input.DappId)));
+        }
+
+        if (input.Address != "")
+        {
+            mustQuery.Add(q => q.Term(i => i.Field(f => f.Address).Value(input.Address)));
+        }
+
+        if (input.PointsName != "")
+        {
+            mustQuery.Add(q => q.Term(i => i.Field(f => f.PointsName).Value(input.PointsName)));
+        }
+
+        QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumByActionIndex> f) =>
+            f.Bool(b => b.Must(mustQuery));
+
+        var recordList = await repository.GetListAsync(Filter);
+
+        var dataList =
+            objectMapper.Map<List<AddressPointsSumByActionIndex>, List<PointsSumByActionDto>>(recordList.Item2);
+        return new PointsSumByActionDtoList
+        {
+            Data = dataList,
+            TotalRecordCount = recordList.Item1
+        };
+    }
+
     [Name("getAddressPointLog")]
     public static async Task<AddressPointsLogDtoList> GetAddressPointLog(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsLogIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
         GetAddressPointsLogDto input)
     {
-
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsLogIndex>, QueryContainer>>();
-        
+
         mustQuery.Add(q => q.Term(i => i.Field(f => f.Role).Value(input.Role)));
         mustQuery.Add(q => q.Term(i => i.Field(f => f.Address).Value(input.Address)));
 
@@ -166,7 +209,7 @@ public partial class Query
             f.Bool(b => b.Must(mustQuery));
 
         var recordList = await repository.GetListAsync(Filter);
-        
+
         var dataList = objectMapper.Map<List<AddressPointsLogIndex>, List<AddressPointsLogDto>>(recordList.Item2);
         return new AddressPointsLogDtoList
         {
@@ -174,15 +217,14 @@ public partial class Query
             TotalRecordCount = recordList.Item1
         };
     }
-    
-    
+
+
     [Name("getUserReferralRecords")]
     public static async Task<UserReferralRecordDtoList> GetUserReferralRecords(
         [FromServices] IAElfIndexerClientEntityRepository<UserReferralRecordIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
         GetUserReferralRecordsDto input)
     {
-
         if (input.ReferrerList.IsNullOrEmpty())
         {
             return new UserReferralRecordDtoList
@@ -191,17 +233,17 @@ public partial class Query
                 Data = new List<UserReferralRecordsDto>()
             };
         }
-        
+
         var mustQuery = new List<Func<QueryContainerDescriptor<UserReferralRecordIndex>, QueryContainer>>();
-        
+
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.Referrer).Terms(input.ReferrerList)));
-       
+
         QueryContainer Filter(QueryContainerDescriptor<UserReferralRecordIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
         var recordList = await repository.GetListAsync(Filter, skip: input.SkipCount, limit: input.MaxResultCount,
             sortType: SortOrder.Ascending, sortExp: o => o.CreateTime);
-        
+
         var dataList = objectMapper.Map<List<UserReferralRecordIndex>, List<UserReferralRecordsDto>>(recordList.Item2);
         return new UserReferralRecordDtoList
         {
@@ -209,15 +251,14 @@ public partial class Query
             TotalRecordCount = recordList.Item1
         };
     }
-    
-    
+
+
     [Name("getUserReferralCounts")]
     public static async Task<UserReferralCountDtoList> GetUserReferralCounts(
         [FromServices] IAElfIndexerClientEntityRepository<UserReferralCountIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
         GetUserReferralCountsDto input)
     {
-
         if (input.ReferrerList.IsNullOrEmpty())
         {
             return new UserReferralCountDtoList
@@ -226,17 +267,17 @@ public partial class Query
                 Data = new List<UserReferralCountsDto>()
             };
         }
-        
+
         var mustQuery = new List<Func<QueryContainerDescriptor<UserReferralCountIndex>, QueryContainer>>();
-        
+
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.Referrer).Terms(input.ReferrerList)));
-       
+
         QueryContainer Filter(QueryContainerDescriptor<UserReferralCountIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
         var recordList = await repository.GetListAsync(Filter, skip: input.SkipCount, limit: input.MaxResultCount,
             sortType: SortOrder.Ascending, sortExp: o => o.CreateTime);
-        
+
         var dataList = objectMapper.Map<List<UserReferralCountIndex>, List<UserReferralCountsDto>>(recordList.Item2);
         return new UserReferralCountDtoList
         {
@@ -244,5 +285,39 @@ public partial class Query
             TotalRecordCount = recordList.Item1
         };
     }
-    
+
+    [Name("getOperatorDomainList")]
+    public static async Task<OperatorDomainListDto> GetOperatorDomainList(
+        [FromServices] IAElfIndexerClientEntityRepository<OperatorDomainIndex, LogEventInfo> repository,
+        [FromServices] IObjectMapper objectMapper,
+        GetOperatorDomainListInput input)
+    {
+        if (CollectionUtilities.IsNullOrEmpty(input.AddressList))
+        {
+            return new OperatorDomainListDto
+            {
+                TotalRecordCount = 0,
+                Data = new List<OperatorDomainDto>()
+            };
+        }
+
+        var mustQuery = new List<Func<QueryContainerDescriptor<OperatorDomainIndex>, QueryContainer>>();
+
+        mustQuery.Add(q => q.Term(i => i.Field(f => f.DappId).Value(input.DappId)));
+        mustQuery.Add(q => q.Terms(i => i.Field(f => f.InviterAddress).Terms(input.AddressList)));
+
+
+        QueryContainer Filter(QueryContainerDescriptor<OperatorDomainIndex> f) =>
+            f.Bool(b => b.Must(mustQuery));
+
+        var recordList = await repository.GetListAsync(Filter, skip: input.SkipCount, limit: input.MaxResultCount,
+            sortType: SortOrder.Ascending, sortExp: o => o.CreateTime);
+
+        var dataList = objectMapper.Map<List<OperatorDomainIndex>, List<OperatorDomainDto>>(recordList.Item2);
+        return new OperatorDomainListDto
+        {
+            Data = dataList,
+            TotalRecordCount = recordList.Item1
+        };
+    }
 }

@@ -29,7 +29,7 @@ public class PointsIndexerPluginModule : AElfIndexerClientPluginBaseModule<Point
     }
     
     protected override string ClientId => "AElfIndexer_Points";
-    protected override string Version => "bcc8994e376e47309e6b287d97244c98";
+    protected override string Version => "4cd68186a75f47e298fbf7a3fd3e8d72";
 }
 
 

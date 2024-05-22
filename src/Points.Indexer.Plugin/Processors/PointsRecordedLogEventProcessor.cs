@@ -50,8 +50,11 @@ public class PointsRecordedLogEventProcessor : AElfLogEventProcessorBase<PointsC
 
         foreach (var pointsDetail in eventValue.PointsChangedDetails.PointsDetails)
         {
+            var balanceValue = pointsDetail.BalanceValue?.Value ?? pointsDetail.Balance.ToString();
+            var increaseValue = pointsDetail.IncreaseValue?.Value ?? pointsDetail.IncreaseAmount.ToString();
+            
             var rawLogIndexId = IdGenerateHelper.GetId(context.TransactionId, pointsDetail.DappId.ToHex(),
-                pointsDetail.PointsReceiver.ToBase58(), pointsDetail.IncomeSourceType, pointsDetail.ActionName, pointsDetail.PointsName);
+                pointsDetail.PointsReceiver.ToBase58(), pointsDetail.IncomeSourceType, pointsDetail.ActionName, pointsDetail.PointsName, balanceValue, increaseValue);
             var pointsLogIndexId = HashHelper.ComputeFrom(rawLogIndexId).ToHex();
             var pointsLogIndex = await _addressPointsLogIndexRepository.GetFromBlockStateSetAsync(pointsLogIndexId, context.ChainId);
             if (pointsLogIndex != null)
@@ -72,7 +75,7 @@ public class PointsRecordedLogEventProcessor : AElfLogEventProcessorBase<PointsC
                 pointsDetail.Domain, pointsDetail.ActionName, pointsDetail.IncomeSourceType);
             var pointsActionIndexId = HashHelper.ComputeFrom(rawActionIndexId).ToHex();
             var pointsActionIndex = await _addressPointsSumByActionIndexRepository.GetFromBlockStateSetAsync(pointsActionIndexId, context.ChainId);
-            var increaseValue = pointsDetail.IncreaseValue?.Value ?? pointsDetail.IncreaseAmount.ToString();
+            
             if (pointsActionIndex != null)
             {
                 var amount = BigInteger.Parse(pointsActionIndex.Amount) + BigInteger.Parse(increaseValue);
@@ -166,6 +169,18 @@ public class PointsRecordedLogEventProcessor : AElfLogEventProcessorBase<PointsC
         else if (symbol.EndsWith("-9"))
         {
             newIndex.NineSymbolAmount = amount;
+        }
+        else if (symbol.EndsWith("-10"))
+        {
+            newIndex.TenSymbolAmount = amount;
+        }
+        else if (symbol.EndsWith("-11"))
+        {
+            newIndex.ElevenSymbolAmount = amount;
+        }
+        else if (symbol.EndsWith("-12"))
+        {
+            newIndex.TwelveSymbolAmount = amount;
         }
         else
         {
