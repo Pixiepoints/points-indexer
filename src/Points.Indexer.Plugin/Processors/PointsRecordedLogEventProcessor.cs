@@ -167,6 +167,18 @@ public class PointsRecordedLogEventProcessor : AElfLogEventProcessorBase<PointsC
         {
             newIndex.NineSymbolAmount = amount;
         }
+        else if (symbol.EndsWith("-10"))
+        {
+            newIndex.TenSymbolAmount = amount;
+        }
+        else if (symbol.EndsWith("-11"))
+        {
+            newIndex.ElevenSymbolAmount = amount;
+        }
+        else if (symbol.EndsWith("-12"))
+        {
+            newIndex.TwelveSymbolAmount = amount;
+        }
         else
         {
             return false;
