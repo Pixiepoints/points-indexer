@@ -43,7 +43,16 @@ public partial class Query
         {   
             SortingKeywordType.FirstSymbolAmount => "firstSymbolAmount",
             SortingKeywordType.SecondSymbolAmount => "secondSymbolAmount",
+            SortingKeywordType.ThirdSymbolAmount => "thirdSymbolAmount",
+            SortingKeywordType.FourSymbolAmount => "fourSymbolAmount",
             SortingKeywordType.FiveSymbolAmount => "fiveSymbolAmount",
+            SortingKeywordType.SixSymbolAmount => "sixSymbolAmount",
+            SortingKeywordType.SevenSymbolAmount => "sevenSymbolAmount",
+            SortingKeywordType.EightSymbolAmount => "eightSymbolAmount",
+            SortingKeywordType.NineSymbolAmount => "nineSymbolAmount",
+            SortingKeywordType.TenSymbolAmount => "tenSymbolAmount",
+            SortingKeywordType.ElevenSymbolAmount => "elevenSymbolAmount",
+            SortingKeywordType.TwelveSymbolAmount => "twelveSymbolAmount",
             _ => "FirstSymbolAmount"
         };
         var sortScriptSource = String.Format(SortScriptSourceFormat, sortField, sortField);
