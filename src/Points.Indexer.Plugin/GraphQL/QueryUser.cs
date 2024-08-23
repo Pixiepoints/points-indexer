@@ -2,6 +2,7 @@ using AElfIndexer.Client;
 using AElfIndexer.Grains.State.Client;
 using Points.Indexer.Plugin.Entities;
 using GraphQL;
+using Microsoft.Extensions.Options;
 using Nest;
 using Points.Indexer.Plugin.GraphQL.Dto;
 using Volo.Abp.ObjectMapping;
@@ -14,6 +15,7 @@ public partial class Query
     public static async Task<OperatorUserPagerDto> QueryUserAsync(
         [FromServices] IAElfIndexerClientEntityRepository<OperatorUserIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         OperatorUserRequestDto input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<OperatorUserIndex>, QueryContainer>>();
@@ -32,6 +34,10 @@ public partial class Query
 
         if (input.CreateTimeGtEq != null)
             mustQuery.Add(q => q.LongRange(i => i.Field(f => f.CreateTime).GreaterThanOrEquals(input.CreateTimeGtEq)));
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<OperatorUserIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
 
         QueryContainer Filter(QueryContainerDescriptor<OperatorUserIndex> f) => f.Bool(b => b.Must(mustQuery));
         var (total, list) = await repository.GetListAsync(Filter,

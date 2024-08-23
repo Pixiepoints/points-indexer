@@ -63,7 +63,7 @@ public class PointsLogEventProcessorTests : PointsIndexerPluginTestBase
         await updatedProcessor.HandleEventAsync(logEvent, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
 
-        var pointsSumBySymbol = await Query.GetPointsSumBySymbol(symbolIndexRepository, objectMapper,
+        var pointsSumBySymbol = await Query.GetPointsSumBySymbol(symbolIndexRepository, objectMapper,null,
             new GetPointsSumBySymbolDto()
             {
                 StartTime = DateTime.Now.AddHours(-1),
@@ -139,7 +139,7 @@ public class PointsLogEventProcessorTests : PointsIndexerPluginTestBase
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
         
-        var pointsSumByAction1 = await Query.GetPointsSumByAction(actionIndexRepository, objectMapper,
+        var pointsSumByAction1 = await Query.GetPointsSumByAction(actionIndexRepository, objectMapper,null,
             new GetPointsSumByActionDto()
             {
                 Domain = "test.dapp.io",
@@ -149,7 +149,7 @@ public class PointsLogEventProcessorTests : PointsIndexerPluginTestBase
         pointsSumByAction1.TotalRecordCount.ShouldBe(2);
         
         
-        var pointsSumByAction2 = await Query.GetPointsSumByAction(actionIndexRepository, objectMapper,
+        var pointsSumByAction2 = await Query.GetPointsSumByAction(actionIndexRepository, objectMapper,null,
             new GetPointsSumByActionDto()
             {
                 Domain = "test.dapp.io",
@@ -160,7 +160,7 @@ public class PointsLogEventProcessorTests : PointsIndexerPluginTestBase
         pointsSumByAction2.TotalRecordCount.ShouldBe(1);
         
         
-        var addressLog = await Query.GetAddressPointLog(logIndexRepository, objectMapper,
+        var addressLog = await Query.GetAddressPointLog(logIndexRepository, objectMapper,null,
             new GetAddressPointsLogDto()
             {
                 Address = "2NxwCPAGJr4knVdmwhb1cK7CkZw5sMJkRDLnT7E2GoDP2dy5iZ",
@@ -169,7 +169,7 @@ public class PointsLogEventProcessorTests : PointsIndexerPluginTestBase
         addressLog.TotalRecordCount.ShouldBe(1);
         
         
-        var pointsSumBySymbol = await Query.GetPointsSumBySymbol(symbolIndexRepository, objectMapper,
+        var pointsSumBySymbol = await Query.GetPointsSumBySymbol(symbolIndexRepository, objectMapper,null,
             new GetPointsSumBySymbolDto()
             {
                 StartTime = DateTime.Now.AddHours(-1),

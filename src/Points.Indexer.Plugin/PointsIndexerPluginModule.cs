@@ -19,6 +19,7 @@ public class PointsIndexerPluginModule : AElfIndexerClientPluginBaseModule<Point
     {
         var configuration = serviceCollection.GetConfiguration();
         Configure<ContractInfoOptions>(configuration.GetSection("ContractInfo"));
+        Configure<DomainInfoOptions>(configuration.GetSection("DomainInfo"));
     
         serviceCollection.AddSingleton<IAElfLogEventProcessor<LogEventInfo>, AppliedLogEventProcessor>();
         serviceCollection.AddSingleton<IAElfLogEventProcessor<LogEventInfo>, JoinedLogEventProcessor>();

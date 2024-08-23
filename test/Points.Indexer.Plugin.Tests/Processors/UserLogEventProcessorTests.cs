@@ -42,7 +42,7 @@ public sealed class UserLogEventProcessorTests : PointsIndexerPluginTestBase
         await joinedProcessor.HandleEventAsync(logEvent, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
-        var userPager = await Query.QueryUserAsync(userRepository, objectMapper, new OperatorUserRequestDto());
+        var userPager = await Query.QueryUserAsync(userRepository, objectMapper, null,new OperatorUserRequestDto());
         userPager.ShouldNotBeNull();
         userPager.TotalRecordCount.ShouldBe(1);
         userPager.Data.ShouldNotBeEmpty();
@@ -51,7 +51,7 @@ public sealed class UserLogEventProcessorTests : PointsIndexerPluginTestBase
         await joinedProcessor.HandleEventAsync(logEvent, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
-        userPager = await Query.QueryUserAsync(userRepository, objectMapper, new OperatorUserRequestDto());
+        userPager = await Query.QueryUserAsync(userRepository, objectMapper, null,new OperatorUserRequestDto());
         userPager.ShouldNotBeNull();
         userPager.TotalRecordCount.ShouldBe(1);
         userPager.Data.ShouldNotBeEmpty();
@@ -84,7 +84,7 @@ public sealed class UserLogEventProcessorTests : PointsIndexerPluginTestBase
         await joinedProcessor.HandleEventAsync(logEvent, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
-        var userPager = await Query.QueryUserAsync(userRepository, objectMapper, new OperatorUserRequestDto
+        var userPager = await Query.QueryUserAsync(userRepository, objectMapper, null,new OperatorUserRequestDto
         {
             DomainIn = new List<string>{"test.dapp.io"},
             AddressIn = new List<string>{"xsnQafDAhNTeYcooptETqWnYBksFGGXxfcQyJJ5tmu6Ak9ZZt"}

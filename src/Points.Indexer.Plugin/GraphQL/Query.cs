@@ -6,9 +6,11 @@ using AElfIndexer.Grains.Grain.Client;
 using AElfIndexer.Grains.State.Client;
 using Points.Indexer.Plugin.Entities;
 using GraphQL;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Nest;
 using Orleans;
+using Points.Contracts.Point;
 using Points.Indexer.Plugin.GraphQL.Dto;
 using Volo.Abp.ObjectMapping;
 
@@ -75,6 +77,7 @@ public partial class Query
     public static async Task<PointsSumBySymbolDtoList> GetPointsSumBySymbol(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumBySymbolIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetPointsSumBySymbolDto input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
@@ -100,6 +103,25 @@ public partial class Query
                     .Value(input.DappName)));
         }
 
+        if (!input.AddressList.IsNullOrEmpty())
+        {
+            mustQuery.Add(q => q.Terms(i => i.Field(f => f.Address).Terms(input.AddressList)));
+        }
+
+        var domains = options.Value.InternalDomains;
+        if (input.HiddenMainDomain == null)
+        {
+            domains.Remove(options.Value.MainDomain);
+        }
+        if (input.Role == null)
+        {
+            mustQuery.Add(q => q.Term(i => i.Field(f => f.Role).Value(IncomeSourceType.User)));
+        }
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(domains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
+
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumBySymbolIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
@@ -119,6 +141,7 @@ public partial class Query
     public static async Task<PointsSumByActionDtoList> GetPointsSumByAction(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumByActionIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetPointsSumByActionDto input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
@@ -143,6 +166,11 @@ public partial class Query
             mustQuery.Add(q => q.Term(i => i.Field(f => f.Role).Value(input.Role)));
         }
 
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
+
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumByActionIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
@@ -161,6 +189,7 @@ public partial class Query
     public static async Task<PointsSumByActionDtoList> GetPointsRecordByName(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumByActionIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetPointsRecordByNameDto input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
@@ -180,6 +209,11 @@ public partial class Query
             mustQuery.Add(q => q.Term(i => i.Field(f => f.PointsName).Value(input.PointsName)));
         }
 
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumByActionIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
+
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumByActionIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
@@ -198,12 +232,18 @@ public partial class Query
     public static async Task<AddressPointsLogDtoList> GetAddressPointLog(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsLogIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetAddressPointsLogDto input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsLogIndex>, QueryContainer>>();
 
         mustQuery.Add(q => q.Term(i => i.Field(f => f.Role).Value(input.Role)));
         mustQuery.Add(q => q.Term(i => i.Field(f => f.Address).Value(input.Address)));
+
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsLogIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
 
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsLogIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
@@ -223,6 +263,7 @@ public partial class Query
     public static async Task<UserReferralRecordDtoList> GetUserReferralRecords(
         [FromServices] IAElfIndexerClientEntityRepository<UserReferralRecordIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetUserReferralRecordsDto input)
     {
         if (input.ReferrerList.IsNullOrEmpty())
@@ -237,7 +278,10 @@ public partial class Query
         var mustQuery = new List<Func<QueryContainerDescriptor<UserReferralRecordIndex>, QueryContainer>>();
 
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.Referrer).Terms(input.ReferrerList)));
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<UserReferralRecordIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
 
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
         QueryContainer Filter(QueryContainerDescriptor<UserReferralRecordIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
@@ -257,6 +301,7 @@ public partial class Query
     public static async Task<UserReferralCountDtoList> GetUserReferralCounts(
         [FromServices] IAElfIndexerClientEntityRepository<UserReferralCountIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetUserReferralCountsDto input)
     {
         if (input.ReferrerList.IsNullOrEmpty())
@@ -272,6 +317,10 @@ public partial class Query
 
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.Referrer).Terms(input.ReferrerList)));
 
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<UserReferralCountIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
         QueryContainer Filter(QueryContainerDescriptor<UserReferralCountIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 
@@ -290,6 +339,7 @@ public partial class Query
     public static async Task<OperatorDomainListDto> GetOperatorDomainList(
         [FromServices] IAElfIndexerClientEntityRepository<OperatorDomainIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetOperatorDomainListInput input)
     {
         if (CollectionUtilities.IsNullOrEmpty(input.AddressList))
@@ -306,7 +356,10 @@ public partial class Query
         mustQuery.Add(q => q.Term(i => i.Field(f => f.DappId).Value(input.DappId)));
         mustQuery.Add(q => q.Terms(i => i.Field(f => f.InviterAddress).Terms(input.AddressList)));
 
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<OperatorDomainIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
 
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
         QueryContainer Filter(QueryContainerDescriptor<OperatorDomainIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
 

@@ -39,7 +39,7 @@ public class ReferralAcceptedLogEventProcessorTests : PointsIndexerPluginTestBas
         await processor.HandleEventAsync(logEvent1, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
-        var records1 = await Query.GetUserReferralRecords(recordRepository, objectMapper, 
+        var records1 = await Query.GetUserReferralRecords(recordRepository, objectMapper, null,
             new GetUserReferralRecordsDto()
         {
             ReferrerList = new List<string>
@@ -50,7 +50,7 @@ public class ReferralAcceptedLogEventProcessorTests : PointsIndexerPluginTestBas
         });
         records1.TotalRecordCount.ShouldBe(1);
 
-        var counts1 = await Query.GetUserReferralCounts(countRepository, objectMapper, 
+        var counts1 = await Query.GetUserReferralCounts(countRepository, objectMapper, null,
             new GetUserReferralCountsDto()
         {
             ReferrerList = new List<string>
@@ -76,7 +76,7 @@ public class ReferralAcceptedLogEventProcessorTests : PointsIndexerPluginTestBas
         await processor.HandleEventAsync(logEvent2, context);
         await BlockStateSetSaveDataAsync<LogEventInfo>(state);
         
-        var records2 = await Query.GetUserReferralRecords(recordRepository, objectMapper, 
+        var records2 = await Query.GetUserReferralRecords(recordRepository, objectMapper, null,
             new GetUserReferralRecordsDto()
             {
                 ReferrerList = new List<string>
@@ -87,7 +87,7 @@ public class ReferralAcceptedLogEventProcessorTests : PointsIndexerPluginTestBas
             });
         records2.TotalRecordCount.ShouldBe(2);
 
-        var counts2 = await Query.GetUserReferralCounts(countRepository, objectMapper, 
+        var counts2 = await Query.GetUserReferralCounts(countRepository, objectMapper, null,
             new GetUserReferralCountsDto()
             {
                 ReferrerList = new List<string>

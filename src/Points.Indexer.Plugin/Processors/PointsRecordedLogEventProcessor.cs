@@ -117,11 +117,7 @@ public class PointsRecordedLogEventProcessor : AElfLogEventProcessorBase<PointsC
             {
                 pointsIndex = _objectMapper.Map<PointsChangedDetail, AddressPointsSumBySymbolIndex>(pointsDetail);
                 _objectMapper.Map(context, pointsIndex);
-                var needUpdated = UpdatePoint(pointsDetail, pointsIndex, out var newIndex);
-                if (!needUpdated)
-                {
-                    continue;
-                }
+                UpdatePoint(pointsDetail, pointsIndex, out var newIndex);
                 
                 newIndex.Id = pointsSymbolIndexId;
                 newIndex.CreateTime = context.BlockTime;

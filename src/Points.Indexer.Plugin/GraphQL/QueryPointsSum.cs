@@ -3,6 +3,7 @@ using AElfIndexer.Client;
 using AElfIndexer.Grains.State.Client;
 using GraphQL;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nest;
 using Points.Contracts.Point;
 using Points.Indexer.Plugin.Entities;
@@ -18,6 +19,7 @@ public partial class Query
     public static async Task<PointsSumListDto> GetRankingList(
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumBySymbolIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetRankingListInput input)
     {
         var mustQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
@@ -34,7 +36,11 @@ public partial class Query
             i.Field(f => f.DappId).Terms(input.DappId)));
         mustQuery.Add(q => q.Term(i =>
             i.Field(f => f.Role).Value(IncomeSourceType.Kol)));
-        
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
+
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumBySymbolIndex> f) =>
             f.Bool(b => b.Must(mustQuery));
         
@@ -78,6 +84,7 @@ public partial class Query
         [FromServices] IAElfIndexerClientEntityRepository<AddressPointsSumBySymbolIndex, LogEventInfo> repository,
         [FromServices] IObjectMapper objectMapper,
         [FromServices] ILogger<AddressPointsSumBySymbolIndex> logger,
+        [FromServices] IOptionsSnapshot<DomainInfoOptions> options,
         GetPointsEarnedListInput input)
     {
         logger.LogDebug("query input role: {},{}", input.Type, input.Type.ToString());
@@ -101,6 +108,11 @@ public partial class Query
                 i.Field(f => f.Role).Value(input.Type)));
         }
         
+        var mustNotQuery = new List<Func<QueryContainerDescriptor<AddressPointsSumBySymbolIndex>, QueryContainer>>();
+        mustNotQuery.Add(q => q.Terms(i => i.Field(f => f.Domain).Terms(options.Value.InternalDomains)));
+
+        mustQuery.Add(q => q.Bool(b => b.MustNot(mustNotQuery)));
+
         QueryContainer Filter(QueryContainerDescriptor<AddressPointsSumBySymbolIndex> f) => f.Bool(b => b.Must(mustQuery));
 
         var sortType = input.Sorting == "DESC" ? SortOrder.Descending : SortOrder.Ascending;
